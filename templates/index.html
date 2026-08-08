@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Civic Services - Batch 4 Statistics Benchmark</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hero-banner { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0; }
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
+        .stat-card { background: #ffffff; border-left: 4px solid #2a5298; padding: 15px; border-radius: 6px; }
+        .badge-critical { background-color: #dc3545; }
+        .badge-high { background-color: #fd7e14; }
+        .badge-medium { background-color: #ffc107; color: black; }
+        .badge-low { background-color: #198754; }
+    </style>
+</head>
+<body>
+
+    <div class="hero-banner text-center mb-4">
+        <div class="container">
+            <h2 class="fw-bold">🏛️ AI Smart Civic Services Platform</h2>
+            <p class="lead mb-0">Batch 4 Benchmark St: AI Classification & Descriptive Statistical Intelligence</p>
+            <p class="lead mb-0">Student : Abdul Basit</p>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        <div class="row">
+            
+            <div class="col-lg-5 mb-4">
+                <div class="card p-4">
+                    <h4 class="mb-3 text-primary">📢 File a Civic Complaint</h4>
+                    <form id="complaintForm">
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Problem Description</label>
+                            <textarea class="form-control" id="description" rows="4" placeholder="e.g., Deep dangerous pothole on main road causing traffic issues..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Location / Sector</label>
+                            <input type="text" class="form-control" id="location" placeholder="e.g., Sector 4, Main Highway" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Submit Complaint (Process AI)</button>
+                    </form>
+
+                    <div id="aiResult" class="mt-4" style="display:none;"></div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="m-0 text-dark">📊 Statistical Analytics Dashboard</h4>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadAnalytics()">🔄 Refresh Metrics</button>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <small class="text-muted d-block">Mean Res. Time</small>
+                                <span class="h5 fw-bold text-primary" id="mMean">-</span> <small>hrs</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <small class="text-muted d-block">Median (Q2)</small>
+                                <span class="h5 fw-bold text-success" id="mMedian">-</span> <small>hrs</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card">
+                                <small class="text-muted d-block">Std Dev (σ)</small>
+                                <span class="h5 fw-bold text-info" id="mStdDev">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-3">
+                        <table class="table table-bordered table-sm text-center align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Min</th>
+                                    <th>Max</th>
+                                    <th>Range</th>
+                                    <th>Variance</th>
+                                    <th>IQR</th>
+                                    <th>Lower Fence</th>
+                                    <th>Upper Fence</th>
+                                    <th>Outliers</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="sMin">-</td>
+                                    <td id="sMax">-</td>
+                                    <td id="sRange">-</td>
+                                    <td id="sVariance">-</td>
+                                    <td id="sIQR">-</td>
+                                    <td id="sLFence">-</td>
+                                    <td id="sUFence">-</td>
+                                    <td id="sOutliers" class="text-danger fw-bold">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h6 class="fw-bold text-secondary">Category Frequency Distribution</h6>
+                    <div style="height: 220px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+
+                    <div class="alert alert-light border mt-3 mb-0" id="statInsight">
+                        <small><b>Statistical Summary:</b> Loading insights...</small>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let catChart = null;
+
+        document.getElementById('complaintForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const desc = document.getElementById('description').value;
+            const loc = document.getElementById('location').value;
+            const resDiv = document.getElementById('aiResult');
+
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = '<div class="alert alert-info">Running Natural Language Processing & Classification...</div>';
+
+            try {
+                const res = await fetch('/api/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ description: desc, location: loc })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    resDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h6>✅ Registered Successfully (ID: #${data.complaint_id})</h6>
+                            <p class="mb-1"><b>AI Category:</b> <span class="badge bg-primary">${data.ai_output.category}</span></p>
+                            <p class="mb-0"><b>AI Priority:</b> <span class="badge bg-dark">${data.ai_output.priority}</span></p>
+                        </div>
+                    `;
+                    document.getElementById('complaintForm').reset();
+                    loadAnalytics();
+                }
+            } catch (err) {
+                resDiv.innerHTML = '<div class="alert alert-danger">Error connecting to Flask backend.</div>';
+            }
+        });
+
+        async function loadAnalytics() {
+            try {
+                const res = await fetch('/api/analytics');
+                const data = await res.json();
+                const s = data.resolution_time_statistics;
+
+                if (s && !s.error) {
+                    document.getElementById('mMean').innerText = s.mean !== undefined ? s.mean : '-';
+                    document.getElementById('mMedian').innerText = s.median !== undefined ? s.median : '-';
+                    document.getElementById('mStdDev').innerText = s.std_dev !== undefined ? s.std_dev : '-';
+
+                    // Fix for Min and Max values (handles both 'min/max' and 'minimum/maximum')
+                    document.getElementById('sMin').innerText = (s.min !== undefined ? s.min : (s.minimum !== undefined ? s.minimum : '-'));
+                    document.getElementById('sMax').innerText = (s.max !== undefined ? s.max : (s.maximum !== undefined ? s.maximum : '-'));
+                    
+                    document.getElementById('sRange').innerText = s.range !== undefined ? s.range : '-';
+                    document.getElementById('sVariance').innerText = s.variance !== undefined ? s.variance : '-';
+                    document.getElementById('sIQR').innerText = s.iqr !== undefined ? s.iqr : '-';
+                    document.getElementById('sLFence').innerText = s.lower_fence !== undefined ? s.lower_fence : '-';
+                    document.getElementById('sUFence').innerText = s.upper_fence !== undefined ? s.upper_fence : '-';
+                    document.getElementById('sOutliers').innerText = s.outliers_count !== undefined ? s.outliers_count : '-';
+
+                    // Explanatory Text Insight Generation
+                    document.getElementById('statInsight').innerHTML = `
+                        <small><b>Statistical Explanation:</b> The average resolution time is <b>${s.mean} hours</b> with a median of <b>${s.median} hours</b>. 
+                        The Interquartile Range (IQR) spans <b>${s.iqr} hours</b>. 
+                        Any complaint taking over <b>${s.upper_fence} hours</b> is classified as a statistical outlier (${s.outliers_count} detected).</small>
+                    `;
+                }
+
+                if (data.category_distribution && data.category_distribution.frequencies) {
+                    const labels = Object.keys(data.category_distribution.frequencies);
+                    const counts = Object.values(data.category_distribution.frequencies);
+
+                    const ctx = document.getElementById('categoryChart').getContext('2d');
+                    if (catChart) catChart.destroy();
+
+                    catChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Number of Complaints',
+                                data: counts,
+                                backgroundColor: ['#2a5298', '#198754', '#ffc107', '#dc3545', '#0dcaf0'],
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Analytics fetch error:", err);
+            }
+        }
+
+        window.onload = loadAnalytics;
+    </script>
+</body>
+</html>
